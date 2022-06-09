@@ -17,10 +17,7 @@ output:
     bookdown::word_document2:
       fig_caption: yes
       reference_docx: "../templates/template.docx" # Insert path for the DOCX file
-      pandoc_args:
-      - --lua-filter=../templates/scholarly-metadata.lua
-      - --lua-filter=../templates/author-info-blocks.lua
-      - --lua-filter=../templates/pagebreak.lua
+
 bibliography: references.bib
 csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
 abstract: |
@@ -55,6 +52,16 @@ knitr::opts_chunk$set(
 
 <!-- The actual document text starts here: -->
 
+```{r libraries}
+
+library(tidyverse)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+
+```
+
+
 # Introduction
 
 Here is a citation [@Marwick2017]
@@ -67,22 +74,61 @@ Here is a citation [@Marwick2017]
 
 <!-- Here's some example analysis code: -->
 
-```{r get-data, eval = FALSE}
+```{r get-data}
+
 # Note the path that we need to use to access our data files when rendering this document
-my_data <- read.csv(here::here('analysis/data/raw_data/my_csv_file.csv'))
+my_data <- read_csv(here::here('analysis/data/raw_data/167_dataset.csv'))
+
+my_data <- my_data %>% # calling the dataset we want
+  drop_na(ID) # dropping NA values from rows from the specific column. 
+
 ```
 
-```{r demo-plot, fig.cap="A plot of random numbers"}
-plot(rnorm(10))
+```{r type}
+
+typedb <- my_data %>% 
+  select(Type)
+type_table <- table(typedb)
+
+kable(type_table, caption = "Type of tools")
+
 ```
 
-Figure \@ref(fig:demo-plot) shows how we can have a caption and cross-reference for a plot
 
-```{r demo-inline-code}
-x <- round(pi, 2)
+A lot of technological types do not have a platform present (Figure \@ref(fig:hist1)). However, when we look at the types which have platforms, we see that most of them are plain (Figure \@ref(fig:hist2)).
+
+
+```{r fig-table-references}
+
+# To reference a table or image within the text, we use the following: (Figure \@ref(fig:hist1))
+
+# (Figure ) is something we write, to put the reference within ( ) but we can change the word to anything we like: ex: (Image \@ref(fig:hist1)).
+
+# \@ref( ) is calling the reference command. fig: is saying that you want to call the figure within the chunk. And :hist1 is calling the chunk you want.
+
 ```
 
-Here is an example of inline code `r x` in the middle of a sentence. 
+
+
+```{r hist1, fig.cap="A histogram."}
+
+## type of platform by type, WITH absent
+my_data %>% 
+  ggplot(aes(y=Type, fill=Talon)) + # first choosing which columns to plot and full (y/x is always count)
+  geom_bar(position = "dodge") # calling the plot we want
+
+```
+
+```{r hist2, fig.cap="Another histogram."}
+
+## type of platform by type, WITHOUT absent
+my_data %>% 
+  filter(Talon != "Absent") %>% # filtering the absent cases of Talon out
+  ggplot(aes(y=Type, fill=Talon)) +
+  geom_bar(position = "dodge")
+
+```
+
 
 # Discussion
 
